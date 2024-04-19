@@ -70,16 +70,24 @@
 
 <?php
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        // Handle button click here
-        header("Location: search_note.php"); // Redirect to another PHP file
-        exit();
+        if (isset($_POST['search'])) {
+            header("Location: search_note_page.php");
+            exit();
+        } elseif (isset($_POST['delete'])) {
+            header("Location: delete_note_page.php");
+            exit();
+        }
     }
 ?>
 
 <form method="post">
-    <input type="submit" value="Search Note" style="background-color: red; color: white; padding: 15px 32px; text-align: center; font-size: 32px; 
+    <input type="submit" name="search" value="Search Note" style="background-color: red; color: white; padding: 15px 32px; text-align: center; font-size: 32px; 
     margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; position: relative; top: -500px; left: 250px;">
+    
+    <input type="submit" name="delete" value="Delete  Note" style="background-color: green; color: white; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; position: relative; top: -390px; left: -7px;">
 </form>
+
 
 </body>
 

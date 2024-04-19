@@ -44,6 +44,16 @@
     z-index:-2;
 }
 
+.sticky img {
+    position: absolute;
+    top: 0px;
+    left: 1150px;
+    width: 225px; 
+    height: auto;
+    transform: rotate(5deg);
+    z-index:-3;
+}
+
 .pinksticky img {
     position: absolute;
     top: 190px;
@@ -54,15 +64,18 @@
     z-index:-2;
 }
 
-.sticky img {
+.crumpled img {
     position: absolute;
-    top: 0px;
-    left: 1150px;
-    width: 225px; 
+    top: 270px;
+    left: 640px;
+    width: 750px;
     height: auto;
-    transform: rotate(5deg);
-    z-index:-3;
+    transform: rotate(3deg);
+    z-index:-2;
 }
+
+
+
 
 /* Form labels */
 label {
