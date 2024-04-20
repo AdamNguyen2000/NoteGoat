@@ -15,9 +15,10 @@
         }
 
         .custom-height {
-            margin-top: -40px;
+            margin-top: -55px;
             position: relative;
         }
+
     </style>
 </head>
 <body>

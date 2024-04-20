@@ -32,12 +32,20 @@
             position: relative;
             top: 7px;
         }
+
+        /* Make search and delete buttons fixed */
+        form {
+            position: fixed;
+        }
+
+        form input[type="submit"] {
+            position: fixed;
+        }
     </style>
     
 </head>
 
 <body>
-
 <form id="addNoteForm">
 
     <label for="name">Name</label><input type="text" id="name" name="name" required>
@@ -52,7 +60,6 @@
     <div id="addNoteMessage"></div>
 
     <script>
-
         function addNote() {
             var formData = new FormData(document.getElementById("addNoteForm"));
 
@@ -65,7 +72,6 @@
             xhttp.open("POST", "add_note.php", true);
             xhttp.send(formData);
         }
-
     </script>
 
 <?php
@@ -76,18 +82,29 @@
         } elseif (isset($_POST['delete'])) {
             header("Location: delete_note_page.php");
             exit();
+        } elseif (isset($_POST['edit'])) {
+            header("Location: edit_note_page.php");
+            exit();
+        } elseif (isset($_POST['Homepage'])) {
+            header("Location: Homepage.php");
+            exit();
         }
     }
 ?>
 
 <form method="post">
-    <input type="submit" name="search" value="Search Note" style="background-color: red; color: white; padding: 15px 32px; text-align: center; font-size: 32px; 
-    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; position: relative; top: -500px; left: 250px;">
-    
-    <input type="submit" name="delete" value="Delete  Note" style="background-color: green; color: white; padding: 15px 32px; text-align: center; font-size: 32px; 
-    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; position: relative; top: -390px; left: -7px;">
-</form>
+    <input type="submit" name="Homepage" value=" Homepage  " style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 100px; left: 20px;">
 
+    <input type="submit" name="search" value="Search Note" style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 200px; left: 20px;">
+    
+    <input type="submit" name="delete" value="Delete  Note" style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 300px; left: 20px;">
+
+    <input type="submit" name="edit" value="  Edit Note   " style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 400px; left: 20px;">
+</form>
 
 </body>
 

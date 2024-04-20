@@ -1,4 +1,4 @@
-/*Note Goat Title*/
+/* Note Goat Title */
 .custom-font {
     font-family: Arial, sans-serif;
     font-size: 100px;
@@ -8,6 +8,7 @@
     top: -30px;
 }
 
+/* Yellow Banner */
 .rectangle-rounded {
     width: 500px;
     height: 100px;
@@ -67,14 +68,12 @@
 .crumpled img {
     position: absolute;
     top: 270px;
-    left: 640px;
+    left: 600px;
     width: 750px;
     height: auto;
     transform: rotate(3deg);
     z-index:-2;
 }
-
-
 
 
 /* Form labels */

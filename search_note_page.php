@@ -24,10 +24,10 @@
             margin: 20px;
             padding: 20px;
             border-radius: 8px;
-            width: 400px;
+            width: 350px;
             height: 200px;
             position: relative;
-            left: 726px;
+            left: 732px;
             top: -161px;
         }
 
@@ -39,7 +39,7 @@
             color: white;
         }
 
-        /* Search Notes button */
+        /* Button for search */
         button {
             font-family: Arial, sans-serif;
             font-size: 24px;
@@ -52,9 +52,16 @@
             border-radius: 5px; /* Add border-radius */
             margin-top: 13px;
             margin-bottom: 10px;
-            
         }
 
+        /* Make search and delete buttons fixed */
+        form {
+            position: fixed;
+        }
+
+        form input[type="submit"] {
+            position: fixed;
+        }
     </style>
 
     <script>
@@ -89,19 +96,37 @@
     </div>
 </div>
 
-<!-- Switch pages button along with css -->
 <?php
     if ($_SERVER["REQUEST_METHOD"] == "POST") {
-        // Handle button click here
-        header("Location: Homepage.php"); // Redirect to another PHP file
-        exit();
+        if (isset($_POST['search'])) {
+            header("Location: search_note_page.php");
+            exit();
+        } elseif (isset($_POST['delete'])) {
+            header("Location: delete_note_page.php");
+            exit();
+        } elseif (isset($_POST['edit'])) {
+            header("Location: edit_note_page.php");
+            exit();
+        } elseif (isset($_POST['Homepage'])) {
+            header("Location: Homepage.php");
+            exit();
+        }
     }
 ?>
 
 <form method="post">
-    <input type="submit" value="  Homepage " style="background-color: red; color: white; padding: 15px 32px; text-align: center; font-size: 32px; 
-    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; position: relative; top: -329px; left: 247px;">
+<input type="submit" name="Homepage" value=" Homepage  " style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 100px; left: 20px;">
 
+    <input type="submit" name="search" value="Search Note" style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 200px; left: 20px;">
+    
+    <input type="submit" name="delete" value="Delete  Note" style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 300px; left: 20px;">
+
+    <input type="submit" name="edit" value="  Edit Note   " style="background-color: #fff16e; color: black; padding: 15px 32px; text-align: center; font-size: 32px; 
+    margin: 4px 2px; border: none; cursor: pointer; border-radius: 10px; font-weight: bold; top: 400px; left: 20px;">
+</form>
 
 </body>
 
