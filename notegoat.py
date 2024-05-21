@@ -1,19 +1,47 @@
 import re
 import os
 
+# The name of the file where the notes will be stored in SQL format
+SQL_FILENAME = 'notes.sql'
+
 def load_existing_notes():
+    """
+    Loads the existing notes from the SQL file.
+    Returns a set of note names that are already in the file.
+    """
     notes = set()
     try:
-        with open('notes.txt', 'r') as file:
+        with open(SQL_FILENAME, 'r') as file:
             for line in file:
-                line = line.strip()
-                if line and line != '---------------':
-                    notes.add(line)
+                # Use regex to find note names in the INSERT INTO statements
+                match = re.match(r"INSERT INTO notes \(name, address, phone, email, note\) VALUES \('([^']+)'", line)
+                if match:
+                    notes.add(match.group(1))  # Add the note name to the set
     except FileNotFoundError:
-        pass
+        pass  # If the file doesn't exist, return an empty set
     return notes
 
+def write_sql_header():
+    """
+    Writes the SQL table header to the file if it does not already exist.
+    This creates the table schema for storing notes.
+    """
+    if not os.path.exists(SQL_FILENAME):
+        with open(SQL_FILENAME, 'w') as file:
+            file.write("CREATE TABLE IF NOT EXISTS notes (\n")
+            file.write("    id INTEGER PRIMARY KEY AUTOINCREMENT,\n")
+            file.write("    name TEXT UNIQUE,\n")
+            file.write("    address TEXT,\n")
+            file.write("    phone TEXT,\n")
+            file.write("    email TEXT,\n")
+            file.write("    note TEXT\n")
+            file.write(");\n\n")
+
 def add_note():
+    """
+    Adds a new note to the SQL file.
+    Ensures the note name is unique and collects other note details from the user.
+    """
     existing_notes = load_existing_notes()
 
     name = input("Name: ").strip()
@@ -23,12 +51,14 @@ def add_note():
 
     address = input("Address: ").strip()
 
+    # Regex pattern to validate phone number
+    phone_pattern = re.compile(r'^[0-9\s\-]+$')
     while True:
         phone = input("Phone number: ").strip()
-        if phone.isdigit():
+        if phone_pattern.match(phone):
             break
         else:
-            print("Invalid phone number. Please enter numbers only.")
+            print("Invalid phone number. Please enter a valid phone number (digits, spaces, and hyphens allowed).")
 
     while True:
         email = input("Email address: ").strip()
@@ -39,28 +69,28 @@ def add_note():
 
     note = input("Note: ").strip()
 
-    with open('notes.txt', 'a') as file:
-        file.write(f"{name}\n{address}\n{phone}\n{email}\n{note}\n---------------\n")
+    # Write the new note to the SQL file
+    with open(SQL_FILENAME, 'a') as file:
+        sql_command = f"INSERT INTO notes (name, address, phone, email, note) VALUES ('{name}', '{address}', '{phone}', '{email}', '{note}');\n"
+        file.write(sql_command)
     print("Note added successfully.")
 
 def delete_note():
+    """
+    Deletes a note from the SQL file based on the note name provided by the user.
+    """
     search_name = input("Enter the name of the note to delete: ").strip()
 
-    tempfile = 'temp.txt'
+    tempfile = 'temp.sql'
     deleted = False
-    with open('notes.txt', 'r') as infile, open(tempfile, 'w') as outfile:
-        delete = False
+    with open(SQL_FILENAME, 'r') as infile, open(tempfile, 'w') as outfile:
         for line in infile:
-            if line.strip() == search_name and not delete:
-                delete = True
-                deleted = True
-            elif delete and line.strip() == '---------------':
-                delete = False
-                continue
-            if not delete:
-                outfile.write(line)
+            if f"INSERT INTO notes (name, address, phone, email, note) VALUES ('{search_name}'," in line:
+                deleted = True  # Mark as deleted
+            else:
+                outfile.write(line)  # Copy all other lines to the temp file
 
-    os.replace(tempfile, 'notes.txt')
+    os.replace(tempfile, SQL_FILENAME)  # Replace the original file with the updated file
 
     if deleted:
         print("Note deleted successfully.")
@@ -68,20 +98,36 @@ def delete_note():
         print(f"No note with the name '{search_name}' found.")
 
 def search_note():
+    """
+    Searches for a note in the SQL file by the note name provided by the user.
+    Displays the note details if found.
+    """
     search_name = input("Enter the name of the note to search: ").strip()
 
     found = False
-    with open('notes.txt', 'r') as file:
+    with open(SQL_FILENAME, 'r') as file:
         for line in file:
-            if line.strip() == search_name:
+            if f"INSERT INTO notes (name, address, phone, email, note) VALUES ('{search_name}'," in line:
                 found = True
-                print(line.strip())
-            elif found:
-                if line.strip() == '---------------':
-                    break
-                print(line.strip())
+                # Extract the values from the SQL command
+                match = re.search(r"INSERT INTO notes \(name, address, phone, email, note\) VALUES \('([^']*)', '([^']*)', '([^']*)', '([^']*)', '([^']*)'\);", line)
+                if match:
+                    name, address, phone, email, note = match.groups()
+                    print(f"Name: {name}")
+                    print(f"Address: {address}")
+                    print(f"Phone: {phone}")
+                    print(f"Email: {email}")
+                    print(f"Note: {note}")
+                    print(f"---------------")
+                break
+
+    if not found:
+        print(f"No note with the name '{search_name}' found.")
 
 def edit_note():
+    """
+    Edits an existing note by first deleting the old note and then adding a new note with the same name.
+    """
     search_name = input("Enter the name of the note to edit: ").strip()
 
     existing_notes = load_existing_notes()
@@ -89,26 +135,30 @@ def edit_note():
         print(f"No note with the name '{search_name}' found.")
         return
 
-    delete_note_by_name(search_name)
-    add_note()
+    delete_note_by_name(search_name)  # Delete the old note
+    add_note()  # Add a new note with the same name
     print("Note edited successfully.")
 
 def delete_note_by_name(search_name):
-    tempfile = 'temp.txt'
-    with open('notes.txt', 'r') as infile, open(tempfile, 'w') as outfile:
-        delete = False
+    """
+    Helper function to delete a note by name without user interaction.
+    Used internally by edit_note.
+    """
+    tempfile = 'temp.sql'
+    with open(SQL_FILENAME, 'r') as infile, open(tempfile, 'w') as outfile:
         for line in infile:
-            if line.strip() == search_name and not delete:
-                delete = True
-            elif delete and line.strip() == '---------------':
-                delete = False
-                continue
-            if not delete:
-                outfile.write(line)
+            if f"INSERT INTO notes (name, address, phone, email, note) VALUES ('{search_name}'," in line:
+                continue  # Skip the line that matches the note to delete
+            outfile.write(line)  # Copy all other lines to the temp file
 
-    os.replace(tempfile, 'notes.txt')
+    os.replace(tempfile, SQL_FILENAME)  # Replace the original file with the updated file
 
 def main():
+    """
+    Main function to run the note-taking application.
+    Displays a menu to the user for different actions: add, delete, search, edit, and exit.
+    """
+    write_sql_header()  # Ensure the SQL file has the table schema
     while True:
         print("1. Add Note")
         print("2. Delete Note")

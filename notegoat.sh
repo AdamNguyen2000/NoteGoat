@@ -1,154 +1,177 @@
 #!/bin/bash
 
-# Function to add a note
-add_note() {
-    load_existing_notes
+# Define the name of the SQL file where notes will be stored
+SQL_FILENAME="notes.sql"
 
-    echo -n "Name: "
-    read name
-    if [[ -n ${existing_notes["$name"]} ]]; then
+# Ensure the SQL file exists and has the correct header
+function write_sql_header {
+    if [ ! -f "$SQL_FILENAME" ]; then
+        # Create the SQL file with the appropriate table structure
+        echo "CREATE TABLE IF NOT EXISTS notes (" > "$SQL_FILENAME"
+        echo "    id INTEGER PRIMARY KEY AUTOINCREMENT," >> "$SQL_FILENAME"
+        echo "    name TEXT UNIQUE," >> "$SQL_FILENAME"
+        echo "    address TEXT," >> "$SQL_FILENAME"
+        echo "    phone TEXT," >> "$SQL_FILENAME"
+        echo "    email TEXT," >> "$SQL_FILENAME"
+        echo "    note TEXT" >> "$SQL_FILENAME"
+        echo ");" >> "$SQL_FILENAME"
+        echo "" >> "$SQL_FILENAME"
+    fi
+}
+
+# Load existing notes into a list
+function load_existing_notes {
+    if [ -f "$SQL_FILENAME" ]; then
+        # Extract existing note names from the SQL file
+        grep -oP "INSERT INTO notes \(name, address, phone, email, note\) VALUES \('\K[^']+" "$SQL_FILENAME"
+    fi
+}
+
+# Add a new note
+function add_note {
+    local existing_notes=$(load_existing_notes)
+    local name address phone email note
+
+    read -p "Name: " name
+    if echo "$existing_notes" | grep -q "^$name$"; then
         echo "A note with the name '$name' already exists."
         return
     fi
 
-    echo -n "Address: "
-    read address
+    read -p "Address: " address
 
+    # Validate phone number to allow digits, spaces, and hyphens
     while true; do
-        echo -n "Phone number: "
-        read phone
-        if [[ $phone =~ ^[0-9]+$ ]]; then
+        read -p "Phone number: " phone
+        if [[ "$phone" =~ ^[0-9\s\-]+$ ]]; then
             break
         else
-            echo "Invalid phone number. Please enter numbers only."
+            echo "Invalid phone number. Please enter a valid phone number (digits, spaces, and hyphens allowed)."
         fi
     done
 
+    # Validate email to ensure it contains '@'
     while true; do
-        echo -n "Email address: "
-        read email
-        if [[ $email =~ @ ]]; then
+        read -p "Email address: " email
+        if [[ "$email" =~ @ ]]; then
             break
         else
             echo "Missing @. Please enter a valid email address."
         fi
     done
 
-    echo -n "Note: "
-    read note
+    read -p "Note: " note
 
-    echo -e "$name\n$address\n$phone\n$email\n$note\n---------------" >> notes.txt
+    # Append the new note to the SQL file
+    echo "INSERT INTO notes (name, address, phone, email, note) VALUES ('$name', '$address', '$phone', '$email', '$note');" >> "$SQL_FILENAME"
     echo "Note added successfully."
 }
 
-# Function to delete a note
-delete_note() {
-    echo -n "Enter the name of the note to delete: "
-    read search_name
+# Delete a note
+function delete_note {
+    local search_name tempfile
+    read -p "Enter the name of the note to delete: " search_name
 
+    # Create a temporary file to store the updated SQL content
     tempfile=$(mktemp)
-    delete=0
-    deleted=0
+    local deleted=0
 
+    # Copy all lines except the one to be deleted to the temporary file
     while IFS= read -r line; do
-        if [[ $line == "$search_name" ]] && [[ $delete -eq 0 ]]; then
-            delete=1
+        if [[ "$line" != "INSERT INTO notes (name, address, phone, email, note) VALUES ('$search_name',"* ]]; then
+            echo "$line" >> "$tempfile"
+        else
             deleted=1
-        elif [[ $delete -eq 1 ]] && [[ $line == "---------------" ]]; then
-            delete=0
-            continue
         fi
-        [[ $delete -eq 0 ]] && echo "$line" >> "$tempfile"
-    done < notes.txt
+    done < "$SQL_FILENAME"
 
-    mv "$tempfile" notes.txt
+    # Replace the original file with the updated content
+    mv "$tempfile" "$SQL_FILENAME"
 
-    if [[ $deleted -eq 1 ]]; then
+    if [ $deleted -eq 1 ]; then
         echo "Note deleted successfully."
     else
         echo "No note with the name '$search_name' found."
     fi
 }
 
-# Function to search a note
-search_note() {
-    echo -n "Enter the name of the note to search: "
-    read search_name
+# Search for a note
+function search_note {
+    local search_name
+    read -p "Enter the name of the note to search: " search_name
 
-    found=0
+    local found=0
+
+    # Read each line in the SQL file and search for the matching note
     while IFS= read -r line; do
-        if [[ $line == "$search_name" ]]; then
+        if [[ "$line" == "INSERT INTO notes (name, address, phone, email, note) VALUES ('$search_name',"* ]]; then
+            # Extract and print the note details
+            echo "$line" | sed -E "s/INSERT INTO notes \(name, address, phone, email, note\) VALUES \('([^']*)', '([^']*)', '([^']*)', '([^']*)', '([^']*)'\);/Name: \1\nAddress: \2\nPhone: \3\nEmail: \4\nNote: \5/"
             found=1
-            echo "$line"
-        elif [[ $found -eq 1 ]]; then
-            [[ $line == "---------------" ]] && break
-            echo "$line"
+            break
         fi
-    done < notes.txt
+    done < "$SQL_FILENAME"
+
+    if [ $found -eq 0 ]; then
+        echo "No note with the name '$search_name' found."
+    fi
 }
 
-# Function to edit a note
-edit_note() {
-    echo -n "Enter the name of the note to edit: "
-    read search_name
+# Edit a note
+function edit_note {
+    local search_name
+    read -p "Enter the name of the note to edit: " search_name
 
-    load_existing_notes
-    if [[ -z ${existing_notes["$search_name"]} ]]; then
+    local existing_notes=$(load_existing_notes)
+    if ! echo "$existing_notes" | grep -q "^$search_name$"; then
         echo "No note with the name '$search_name' found."
         return
     fi
 
+    # Delete the old note and add a new one
     delete_note_by_name "$search_name"
     add_note
     echo "Note edited successfully."
 }
 
-# Function to delete a note by name
-delete_note_by_name() {
-    search_name=$1
-
+# Delete a note by name without user interaction
+function delete_note_by_name {
+    local search_name="$1"
+    local tempfile
     tempfile=$(mktemp)
-    delete=0
 
+    # Copy all lines except the one to be deleted to the temporary file
     while IFS= read -r line; do
-        if [[ $line == "$search_name" ]] && [[ $delete -eq 0 ]]; then
-            delete=1
-        elif [[ $delete -eq 1 ]] && [[ $line == "---------------" ]]; then
-            delete=0
-            continue
+        if [[ "$line" != "INSERT INTO notes (name, address, phone, email, note) VALUES ('$search_name',"* ]]; then
+            echo "$line" >> "$tempfile"
         fi
-        [[ $delete -eq 0 ]] && echo "$line" >> "$tempfile"
-    done < notes.txt
+    done < "$SQL_FILENAME"
 
-    mv "$tempfile" notes.txt
-}
-
-# Function to load existing notes into an associative array
-load_existing_notes() {
-    declare -gA existing_notes
-    while IFS= read -r line; do
-        if [[ -n $line ]] && [[ $line != "---------------" ]]; then
-            existing_notes["$line"]=1
-        fi
-    done < notes.txt
+    # Replace the original file with the updated content
+    mv "$tempfile" "$SQL_FILENAME"
 }
 
 # Main menu loop
-while true; do
-    echo "1. Add Note"
-    echo "2. Delete Note"
-    echo "3. Search Note"
-    echo "4. Edit Note"
-    echo "5. Exit"
-    echo -n "Enter your choice: "
-    read choice
+function main {
+    write_sql_header
+    while true; do
+        echo "1. Add Note"
+        echo "2. Delete Note"
+        echo "3. Search Note"
+        echo "4. Edit Note"
+        echo "5. Exit"
+        read -p "Enter your choice: " choice
 
-    case $choice in
-        1) add_note ;;
-        2) delete_note ;;
-        3) search_note ;;
-        4) edit_note ;;
-        5) exit ;;
-        *) echo "Invalid choice" ;;
-    esac
-done
+        case $choice in
+            1) add_note ;;
+            2) delete_note ;;
+            3) search_note ;;
+            4) edit_note ;;
+            5) break ;;
+            *) echo "Invalid choice" ;;
+        esac
+    done
+}
+
+# Run the main function
+main
