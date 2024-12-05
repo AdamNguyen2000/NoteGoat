@@ -1,5 +1,5 @@
 ### Screenshots/Diagram
-![Copy of High Level drawio](https://github.com/user-attachments/assets/1b3430f2-316e-41ec-a4ed-5006124fa176)
+![Note Goat drawio (1)](https://github.com/user-attachments/assets/37ac43ec-c2bb-40fd-af87-d293ad89eccf)
 ![2024-12-04_18h17_16](https://github.com/user-attachments/assets/1494fb96-2d55-47d8-b101-020aa272cb55)
 ![2024-12-04_18h17_46](https://github.com/user-attachments/assets/e594ff8d-a72b-4fae-be3d-a9cdf7a99da1)
 
